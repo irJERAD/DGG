@@ -1,423 +1,162 @@
+#' import libraries
+#'
 library(shiny)
 library(shinydashboard)
 library(shinydashboardPlus)
 library(shinyTime)
+library(googlesheets4)
+library(shinyjs)
+library(gargle)
 
-sidebar = dashboardSidebar(sidebarMenu(
-    id = "disc-add",
-    menuItem(
-        "Add Disc",
-        menuSubItem(
-            textInput("disc-name",
-                      label = "Disc Names",
-                      placeholder = "Enter Disc Name"),
-            icon = NULL
-        ),
-        fluidRow(
-            column(width = 1,
-                   selectInput(
-                       "speed", label = "Speed",
-                       choices = c(1:15)
-                   )),
-            column(width = 1),
-            column(width = 1,
-                   selectInput(
-                       "glide", label = "Glide",
-                       choices = c(0:8)
-                   )),
-            column(width = 1),
-            column(width = 1,
-                   selectInput(
-                       "turn", label = "Turn",
-                       choices = c(0:-5)
-                   )),
-            column(width = 1),
-            column(width = 1,
-                   selectInput(
-                       "fade", label = "Fade",
-                       choices = c(0:4)
-                   ))
-        ),
-        actionButton(inputId = "add-disc-sb", label = "Add Disc")
-    )
-))
+#' load functions
+source('reset_boxes.R')
+source('input_boxes.R')
 
-disc_adder_box = box(
-    status = "success",
-    title = "Disc Adder",
-    width = 12,
-    collapsible = TRUE,
-    collapsed = TRUE,
-    solidHeader = TRUE,
-    fluidRow(
-        column(
-            width = 4,
-            textInput("disc-name", label = "Disc Name",
-                      placeholder = "Enter Disc Name")
-        ),
-        column(
-            width = 4,
-            textInput("disc-color", label = "Disc Color",
-                      placeholder = "Enter Disc Color")
-        ),
-        column(
-            width = 4,
-            dateInput(
-                inputId = "disc-age",
-                label = "Apx Purchase Date",
-                format = "mm-yyyy"
-            )
-        )
-    ),
-    fluidRow(
-        column(width = 2,
-               selectInput(
-                   "speed", label = "Speed",
-                   choices = c(1:15)
-               )),
-        column(width = 2,
-               selectInput(
-                   "glide", label = "Glide",
-                   choices = c(0:8)
-               )),
-        column(width = 2,
-               selectInput(
-                   "turn", label = "Turn",
-                   choices = c(0:-5)
-               )),
-        column(width = 2,
-               selectInput(
-                   "fade", label = "Fade",
-                   choices = c(0:4)
-               )),
-        column(width = 4,
-               selectInput(
-                   "wear",
-                   label = "Wear on Disc",
-                   choices = c("Mint", "Like New", "Good",
-                               "Worn", "Destroyed")
-               ))
-    ),
-    fluidRow(column(width = 8),
-             column(
-                 width = 4,
-                 actionButton(inputId = "add-disc",
-                              label = "Add Disc To Collection")
-             ))
+## --- connect to google sheets
+options(
+  gargle_oauth_cache = ".secrets",
+  gargle_oauth_email = TRUE
 )
+gs4_auth(email = "jsacosta1103@gmail.com")
 
-instructional_media_adder_box = box(
-    status = "info",
-    title = "Instructional Media",
-    width = 12,
-    collapsible = TRUE,
-    collapsed = TRUE,
-    solidHeader = TRUE,
-    fluidRow(
-        column(
-            width = 4,
-            selectInput(
-                inputId = "media-type",
-                label = "Media Type",
-                choices = c("Video",
-                            "Article",
-                            "Workshop",
-                            "FirstHand Account")
-            )
-        ),
-        column(
-            width = 4,
-            numericInput(
-                inputId = "replays-rereads",
-                label = "Replays / Rereads",
-                value = 1
-            )
-        ),
-        column(
-            width = 4,
-            numericInput(
-                inputId = "time-invested",
-                label = "Time Invested (min)",
-                value = 10
-            )
-        )
-    ),
-    fluidRow(column(width = 8),
-             column(
-                 width = 4,
-                 actionButton(inputId = "add-instructional",
-                              label = "Add Instructional To Data")
-             ))
-)
+## --- search for existing DGG sheets
+## --- else create appropriate DGG sheets
+### --- Search for or create DGG Discs sheet
+## --- Disc Name sheet
+discs <- gs4_find("DGG Discs")[1, ]$id
 
-propullPage <- fluidPage(
-    fluidRow(column(
-        width = 6,
-        selectInput(
-            inputId = "hand",
-            label = "Backhand / Forehand",
-            choices = c("Backhand", "Forehand")
-        )
-    ),
-    column(
-        width = 6,
-        selectInput(
-            inputId = "resistanceBand",
-            label = "Resistance Band",
-            choices = c("Yellow", "Green", "Yellow & Green")
-        )
-    )),
-    fluidRow(
-        column(
-            width = 3,
-            numericInput(
-                inputId = "pullThrough",
-                label = "Pull Through",
-                value = 0
-            )
-        ),
-        column(
-            width = 3,
-            numericInput(
-                inputId = "backHold",
-                label = "Rear Hold",
-                value = 0
-            )
-        ),
-        column(
-            width = 3,
-            numericInput(
-                inputId = "midFreeze",
-                label = "Mid Hold",
-                value = 0
-            )
-        ),
-        column(
-            width = 3,
-            numericInput(
-                inputId = "frontFreeze",
-                label = "Front Hold",
-                value = 0
-            )
-        )
-    ),
-    fluidRow(column(
-        width = 4,
-        offset = 7,
-        actionButton(inputId = "submitProPull",
-                     label = "Submit Pro-Pull Workout")
-    ))
-)
+if (is.na(discs)) {
+  df <- as.data.frame(matrix(ncol = 10, nrow = 0))
+  names(df) <- c(
+    "Disc Name",
+    "Speed",
+    "Glide",
+    "Turn",
+    "Fade",
+    "Disc Type",
+    "Disc Color",
+    "Disc Weight",
+    "Purchase Date",
+    "Disc Condition"
+  )
+  
+  discsSheet <- gs4_create(name = "DGG Discs", sheets = df)
+  discs <- discsSheet[1]
+}
 
-elevensPage <- fluidPage(
-    fluidRow(
-        column(width = 2,
-               selectInput(
-                   inputId = "11ft",
-                   label = "11ft",
-                   choices = c(0:5)
-               )),
-        column(width = 2,
-               selectInput(
-                   inputId = "22ft",
-                   label = "22ft",
-                   choices = c(0:5)
-               )),
-        column(width = 2,
-               selectInput(
-                   inputId = "33ft",
-                   label = "33ft",
-                   choices = c(0:5)
-               )),
-        column(width = 2,
-               selectInput(
-                   inputId = "44ft",
-                   label = "44ft",
-                   choices = c(0:5)
-               )),
-        column(width = 2,
-               selectInput(
-                   inputId = "55ft",
-                   label = "55ft",
-                   choices = c(0:5)
-               )),
-        column(width = 2,
-               selectInput(
-                   inputId = "66ft",
-                   label = "66ft",
-                   choices = c(0:5)
-               ))
-    ),
-    fluidRow(
-        column(
-            width = 2,
-            numericInput(
-                inputId = "time-played",
-                label = "Amount of Time (min)",
-                value = 0
-            )
-        ),
-        column(
-            width = 3,
-            offset = 9,
-            actionButton(inputId = "submit-score",
-                         label = "Submit Score")
-        )
-    )
-)
+## --- Wellness Sheet
+wellness <- gs4_find("DGG Wellness")[1, ]$id
 
-towelDrillPage <- fluidPage(
-    fluidRow(
-    column(
-        width = 4,
-        numericInput(
-            inputId = "towelReps",
-            label = "Reps",
-            value = 0
-        )
-    ),
-    column(
-        width = 4,
-        numericInput(
-            inputId = "towelTime",
-            label = "Time (min)",
-            value = 0
-        )
-    )
-    ),
-    fluidRow(
-    column(
-        width = 4,
-        offset = 7,
-        actionButton(inputId = "towelDrillSubmit",
-                     label = "Submit Towel Drill Data")
-    )
-    )
-)
+if (is.na(wellness)) {
+  df <- as.data.frame(matrix(ncol = 11, nrow = 0))
+  names(df) <- c(
+    "Date",
+    "Time",
+    "Wholeness",
+    "Hydration",
+    "Sleep",
+    "Energy",
+    "Emotion",
+    "Focus",
+    "Last Meal",
+    "Muscles",
+    "Body"
+  )
+  
+  wellnessSheet <- gs4_create(name = "DGG Wellness", sheets = df)
+  wellness <- wellnessSheet[1]
+}
 
-exercise_adder_box = box(
-    status = "danger",
-    title = "Exercise / Training",
-    width = 12,
-    collapsible = TRUE,
-    collapsed = TRUE,
-    solidHeader = TRUE,
-    fluidPage(fluidRow(
-        column(
-            width = 4,
-            selectInput(
-                inputId = "activityType",
-                label = "Type Of Activity",
-                choices = c(
-                    "Pro-Pull",
-                    "11s",
-                    "10 and Go",
-                    "Towel Drill",
-                    "Driving Net",
-                    "Free Putt"
-                )
-            )
-        ),
-        column(
-            width = 3,
-            dateInput(
-                inputId = "activity-date",
-                label = "Date of Activity",
-                format = "dd-mm-yyyy"
-            )
-        ),
-        column(
-            width = 5,
-            timeInput(
-                inputId = "activity-time",
-                label = "Time of Activity",
-                value = Sys.time()
-            )
-        )
-    ),),
-    
-    conditionalPanel(condition = "input.activityType == 'Pro-Pull'",
-                     propullPage),
-    conditionalPanel(condition = "input.activityType == '11s'",
-                     elevensPage),
-    conditionalPanel(condition = "input.activityType == 'Towel Drill'",
-                     towelDrillPage)
-)
 
-throw_adder_box <- box(
-    status = "warning",
-    title = "Add Throw",
-    width = 12,
-    collapsible = TRUE,
-    collapsed = TRUE,
-    solidHeader = TRUE,
-    fluidRow(
-        column(
-            width = 4,
-            selectInput(
-                inputId = "select-disc",
-                label = "Select Disc",
-                choices = c(
-                    "Create Variable",
-                    "Pull Data From gDocs",
-                    "Iterative Display Here"
-                )
-            )
-        ),
-        column(
-            width = 2,
-            numericInput(
-                inputId = "distance",
-                label = "Distance",
-                value = 0
-            )
-        ),
-        column(
-            width = 3,
-            selectInput(
-                inputId = "power",
-                label = "Power",
-                choices = c("Highest",
-                            "High",
-                            "Average",
-                            "Low",
-                            "Lowest"),
-                selected = "Average"
-            )
-        ),
-        column(
-            width = 3,
-            selectInput(
-                inputId = "quality",
-                label = "Quality",
-                choices = c("Best",
-                            "Average",
-                            "Poor"),
-                selected = "Average"
-            )
-        )
-    )
-)
+## --- build ui
+## --- header
+header <- dashboardHeader(title = "Disc Golf Growth App",
+                          disable = FALSE,
+                          dropdownMenuOutput("Add Disc"))
 
+## --- sidebar
+sidebar = dashboardSidebar(minified = TRUE,
+                           collapsed = TRUE,
+                           sidebarMenu(id = "sidebar"))
+
+## --- data entry boxes
+disc_adder_box <- discName_box()
+
+instructional_media_adder_box <- instructional_media_box()
+
+exercise_adder_box <- exercise_box()
+
+throw_adder_box <- throw_box()
+
+wellbeing_adder_box <- wellbeing_box()
+
+## --- dashboard body
 body = dashboardBody(
-    disc_adder_box,
-    instructional_media_adder_box,
-    exercise_adder_box,
-    throw_adder_box
+  useShinyjs(),
+  disc_adder_box,
+  instructional_media_adder_box,
+  exercise_adder_box,
+  throw_adder_box,
+  wellbeing_adder_box
 )
 
+## --- assemble shiny app
 shinyApp(
-    ui = dashboardPage(
-        skin = "midnight",
-        dashboardHeader(
-            title = "Disc Golf Growth App",
-            disable = FALSE,
-            dropdownMenuOutput("Add Disc")
-        ),
-        sidebar,
-        body
-    ),
-    server = function(input, output) {
-        
-    }
+  ui = dashboardPage(skin = "midnight",
+                     header,
+                     sidebar,
+                     body),
+  
+  
+  server = function(input, output) {
+    
+    observeEvent(input$update, {
+      updateBoxSidebar("mycardsidebar")
+    })
+    
+    observeEvent(input$addDisc, {
+      ## --- create data frame of single observation from Disc Name inputs
+      data <-
+        c(
+          input$discName,
+          input$speed,
+          input$glide,
+          input$turn,
+          input$fade,
+          input$discType,
+          input$discColor,
+          input$discWeight,
+          input$discAge,
+          input$condition
+        )
+      data <- rbind(data.frame(), data)
+      ## --- append data frame to google sheets
+      sheet_append(discs, data)
+      ## --- reset input values
+      reset_discName_box()
+    })
+    
+    observeEvent(input$wellnessSubmit, {
+      ## --- create data frame of single observation from input data
+      data <-
+        c(
+          input$wellnessDate,
+          input$wellnessTime,
+          input$wellnessWholeness,
+          input$wellnessHydration,
+          input$wellnessSleep,
+          input$wellnessEnergy,
+          input$wellnessEmotion,
+          input$wellnessFocus,
+          input$wellnessMeal,
+          input$wellnessMuscles,
+          input$wellnessBody
+        )
+      data <- rbind(data.frame(), data)
+      ## --- append data frame to google sheet
+      sheet_append(wellness, data)
+      ## --- Reset input values for wellness box
+      reset_wellness_box()
+    })
+  }
 )

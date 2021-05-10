@@ -1,0 +1,14 @@
+name: DiscGolfGrowth
+title: DiscGolfGrowth
+username:
+account: jerad
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4097009
+bundleId: 4575149
+url: https://jerad.shinyapps.io/DiscGolfGrowth/
+when: 1620503973.14922
+lastSyncTime: 1620503973.14924
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .RData|appTester.R|DGG/server.R|DGG/temp|DGG/ui.R|README.md
