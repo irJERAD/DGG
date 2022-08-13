@@ -5,10 +5,10 @@ account: jerad
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4097009
-bundleId: 4575149
+bundleId: 6197106
 url: https://jerad.shinyapps.io/DiscGolfGrowth/
-when: 1620503973.14922
-lastSyncTime: 1620503973.14924
+when: 1660355518.69659
+lastSyncTime: 1660355518.69661
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: .RData|appTester.R|DGG/server.R|DGG/temp|DGG/ui.R|README.md
+ignoredFiles: .RData|appTester.R|README.md

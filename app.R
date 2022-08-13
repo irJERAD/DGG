@@ -13,19 +13,19 @@ source('reset_boxes.R')
 source('input_boxes.R')
 
 ## --- connect to google sheets
-options(
-  gargle_oauth_cache = ".secrets",
-  gargle_oauth_email = TRUE
-)
-gs4_auth(email = "jsacosta1103@gmail.com")
+#options(
+#  gargle_oauth_cache = ".secrets",
+#  gargle_oauth_email = TRUE
+#)
+#gs4_auth(email = "jsacosta1103@gmail.com")
 
 ## --- search for existing DGG sheets
 ## --- else create appropriate DGG sheets
 ### --- Search for or create DGG Discs sheet
 ## --- Disc Name sheet
-discs <- gs4_find("DGG Discs")[1, ]$id
+#discs <- gs4_find("DGG Discs")[1, ]$id
 
-if (is.na(discs)) {
+#if (is.na(discs)) {
   df <- as.data.frame(matrix(ncol = 10, nrow = 0))
   names(df) <- c(
     "Disc Name",
@@ -40,14 +40,14 @@ if (is.na(discs)) {
     "Disc Condition"
   )
   
-  discsSheet <- gs4_create(name = "DGG Discs", sheets = df)
-  discs <- discsSheet[1]
-}
+  #discsSheet <- gs4_create(name = "DGG Discs", sheets = df)
+  #discs <- discsSheet[1]
+#}
 
 ## --- Wellness Sheet
-wellness <- gs4_find("DGG Wellness")[1, ]$id
+#wellness <- gs4_find("DGG Wellness")[1, ]$id
 
-if (is.na(wellness)) {
+#if (is.na(wellness)) {
   df <- as.data.frame(matrix(ncol = 11, nrow = 0))
   names(df) <- c(
     "Date",
@@ -63,9 +63,9 @@ if (is.na(wellness)) {
     "Body"
   )
   
-  wellnessSheet <- gs4_create(name = "DGG Wellness", sheets = df)
-  wellness <- wellnessSheet[1]
-}
+#  wellnessSheet <- gs4_create(name = "DGG Wellness", sheets = df)
+#  wellness <- wellnessSheet[1]
+#}
 
 
 ## --- build ui
@@ -131,7 +131,7 @@ shinyApp(
         )
       data <- rbind(data.frame(), data)
       ## --- append data frame to google sheets
-      sheet_append(discs, data)
+#      sheet_append(discs, data)
       ## --- reset input values
       reset_discName_box()
     })
